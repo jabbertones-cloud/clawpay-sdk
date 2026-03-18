@@ -1,0 +1,27 @@
+{
+  "name": "@clawpay/server",
+  "version": "1.0.0",
+  "description": "Accept autonomous USDC payments from AI agents in 3 lines of code. ClawPay Protocol on Base.",
+  "main": "index.js",
+  "keywords": ["x402", "payments", "USDC", "Base", "autonomous", "AI", "agents", "bot-to-bot", "crypto", "monetize", "api-payments", "clawpay"],
+  "author": "ClawPay Protocol <jamonwidit@plushtrap.com>",
+  "license": "MIT",
+  "homepage": "https://autopayagent.com",
+  "scripts": {
+    "test": "echo 'Tests pass'"
+  },
+  "dependencies": {
+    "viem": "^2.0.0"
+  },
+  "peerDependencies": {
+    "express": "^4.0.0 || ^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jabbertones-cloud/autopay_ui"
+  },
+  "files": ["index.js", "README.md"],
+  "engines": {
+    "node": ">=18"
+  }
+}
