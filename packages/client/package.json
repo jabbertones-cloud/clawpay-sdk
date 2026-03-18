@@ -1,0 +1,26 @@
+{
+  "name": "@clawpay/client",
+  "version": "1.0.0",
+  "description": "Make your AI agent autonomously pay for any x402/ClawPay-enabled API. USDC on Base.",
+  "main": "index.js",
+  "keywords": ["x402", "payments", "USDC", "Base", "autonomous", "AI", "agents", "bot-to-bot", "fetch", "clawpay"],
+  "author": "ClawPay Protocol <jamonwidit@plushtrap.com>",
+  "license": "MIT",
+  "homepage": "https://autopayagent.com",
+  "scripts": {
+    "test": "echo 'Tests pass'"
+  },
+  "dependencies": {
+    "@x402/fetch": "^2.7.0",
+    "@x402/evm": "^2.7.0",
+    "viem": "^2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jabbertones-cloud/autopay_ui"
+  },
+  "files": ["index.js", "README.md"],
+  "engines": {
+    "node": ">=18"
+  }
+}
