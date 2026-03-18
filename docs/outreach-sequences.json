@@ -1,0 +1,80 @@
+{
+  "name": "ClawPay Outreach Bot",
+  "version": "1.0",
+  "description": "Autonomous outreach to bot developers. Finds them, shows them how to get paid, onboards them. Every onboarded dev = recurring revenue via 3% protocol fee.",
+
+  "target_audiences": [
+    {
+      "id": "github_bot_devs",
+      "where": "GitHub repos with 'bot', 'agent', 'autonomous', 'ai-agent' in description",
+      "signal": "Has Express/FastAPI server, has API endpoints, no payment logic",
+      "approach": "Open a GitHub Issue with the pitch"
+    },
+    {
+      "id": "twitter_ai_builders",
+      "where": "Twitter/X accounts posting about AI agents, LangChain, CrewAI, AutoGPT",
+      "signal": "Building bots that do useful things, no monetization yet",
+      "approach": "Reply to their tweets showing how to monetize"
+    },
+    {
+      "id": "discord_bot_communities",
+      "where": "Discord servers: AI agents, bot builders, LangChain, AutoGPT, CrewAI",
+      "signal": "Asking 'how do I monetize my bot'",
+      "approach": "Answer with ClawPay setup"
+    },
+    {
+      "id": "reddit_ai_builders",
+      "where": "r/artificial, r/ChatGPT, r/LocalLLaMA, r/MachineLearning",
+      "signal": "Posts about building bots/agents with APIs",
+      "approach": "Comment with monetization angle"
+    }
+  ],
+
+  "sequences": {
+    "github_issue": {
+      "subject": "💰 Your bot could be earning USDC while you sleep",
+      "body": "Hey! I noticed your bot [BOT_NAME] does [WHAT_IT_DOES]. Other AI agents would pay to use it.\n\nWith ClawPay, you can add payment to any endpoint in 3 lines:\n\n```\nnpm install @clawpay/server\n```\n\n```js\nconst { clawpay } = require('@clawpay/server');\napp.get('/your-endpoint', clawpay({ price: '0.25', payTo: '0xYOUR_WALLET' }), handler);\n```\n\nZero gas fees. USDC goes straight to your wallet on Base. Cash out on Coinbase anytime.\n\nI set this up for my own bots and they're collecting payments 24/7. Happy to help you set it up — takes 2 minutes.\n\nDocs: https://autopayagent.com/docs/clawpay"
+    },
+
+    "twitter_reply": {
+      "templates": [
+        "Your agent does [X]? Other bots would pay for that. 3 lines of code: npm install @clawpay/server → add clawpay({ price: '0.25', payTo: '0xWallet' }) to your endpoint → USDC flows 24/7. Zero gas fees.",
+        "Building AI agents is cool. Making them pay each other is cooler. @clawpay lets any bot accept USDC in 3 lines. My bots are collecting payments autonomously rn.",
+        "The bot economy is here. If your agent has an API, it can earn USDC from other agents automatically. Check out ClawPay — takes 2 min to set up."
+      ]
+    },
+
+    "discord_message": {
+      "templates": [
+        "If your bot has an API endpoint that does something useful, you can make it charge USDC per call. Takes 3 lines of code with @clawpay/server. Other AI agents pay automatically — zero gas, USDC to your wallet. I set this up for my bots and they earn 24/7.",
+        "Re: 'how to monetize my bot' — I use ClawPay. npm install @clawpay/server, add one middleware to your Express route, pick your price. Any AI agent with a crypto wallet can now pay to use your bot. 97% goes to you, 3% protocol fee, zero gas."
+      ]
+    },
+
+    "cold_dm": {
+      "subject": "Your bot + payments = passive income",
+      "body": "Hey [NAME], I saw your [BOT_NAME] project. Really cool.\n\nI built something that might interest you — a way to make your bot accept USDC payments from other AI agents automatically. Takes 2 minutes to set up, zero gas fees, money goes straight to your wallet.\n\nMy bots are collecting payments 24/7 with it. Would you be interested in setting it up? I can walk you through it.\n\n— Scott"
+    }
+  },
+
+  "onboarding_flow": {
+    "step_1": "Dev responds with interest",
+    "step_2": "Send them HOW-TO-GET-PAID.md",
+    "step_3": "Help them create a Base wallet (Coinbase link)",
+    "step_4": "Send them the 3-line code snippet customized for their bot",
+    "step_5": "They deploy → their bot is live on ClawPay → we earn 3% of all their revenue forever",
+    "step_6": "Check in weekly — more endpoints = more revenue for them and us"
+  },
+
+  "metrics": {
+    "target_onboards_per_week": 10,
+    "avg_endpoints_per_dev": 3,
+    "avg_calls_per_endpoint_per_day": 100,
+    "avg_price_per_call_usd": 0.25,
+    "protocol_fee_bps": 300,
+    "estimated_monthly_protocol_revenue_per_dev": "100 calls/day × 3 endpoints × $0.25 × 30 days × 3% = $6.75/dev/month",
+    "at_100_devs": "$675/month passive",
+    "at_1000_devs": "$6,750/month passive",
+    "at_10000_devs": "$67,500/month passive"
+  }
+}
