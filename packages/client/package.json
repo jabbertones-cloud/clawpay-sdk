@@ -8,7 +8,7 @@
   "license": "MIT",
   "homepage": "https://autopayagent.com",
   "scripts": {
-    "test": "echo 'Tests pass'"
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "@x402/fetch": "^2.7.0",
