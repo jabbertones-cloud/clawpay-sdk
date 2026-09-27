@@ -43,7 +43,7 @@ const TRANSFER_AUTH_TYPES = {
  * @param {string} [opts.asset]     — USDC contract (default: Base USDC)
  * @returns Express middleware
  */
-function clawpay(opts) {
+function clawpay(opts = {}) {
   const {
     price,
     payTo,
@@ -54,7 +54,18 @@ function clawpay(opts) {
 
   if (!price || !payTo) throw new Error('clawpay: price and payTo are required');
 
-  const requiredMicro = Math.round(parseFloat(price) * 1e6);
+  const parsedPrice = Number(price);
+  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+    throw new Error('clawpay: price must be a positive finite USDC amount');
+  }
+  if (network !== DEFAULT_NETWORK) {
+    throw new Error(`clawpay: unsupported network ${network}; this SDK currently verifies Base mainnet only`);
+  }
+
+  const normalizedPayTo = getAddress(payTo);
+  const normalizedAsset = getAddress(asset);
+  const requiredMicro = BigInt(Math.round(parsedPrice * 1e6));
+  const activeNonces = new Set();
 
   return async function clawpayMiddleware(req, res, next) {
     // Check for payment header
@@ -72,9 +83,9 @@ function clawpay(opts) {
           resource: `${req.protocol}://${req.get('host')}${req.originalUrl}`,
           description,
           mimeType: 'application/json',
-          payTo: getAddress(payTo),
+          payTo: normalizedPayTo,
           maxTimeoutSeconds: 300,
-          asset: getAddress(asset),
+          asset: normalizedAsset,
           extra: { name: 'USDC', version: '2' },
         }],
         clawpay: {
@@ -103,18 +114,26 @@ function clawpay(opts) {
       if (!auth || !signature) throw new Error('Missing authorization or signature');
 
       const now = Math.floor(Date.now() / 1000);
-      if (parseInt(auth.validBefore) < now) throw new Error('Payment expired');
-      if (parseInt(auth.value) < requiredMicro) throw new Error('Insufficient amount');
-      if (getAddress(auth.to) !== getAddress(payTo)) throw new Error('Wrong recipient');
+      const validAfter = Number(auth.validAfter);
+      const validBefore = Number(auth.validBefore);
+      if (!Number.isFinite(validAfter) || !Number.isFinite(validBefore)) throw new Error('Invalid authorization window');
+      if (validAfter > now) throw new Error('Payment not yet valid');
+      if (validBefore <= now) throw new Error('Payment expired');
+      if (validBefore <= validAfter) throw new Error('Invalid authorization window');
+      const authorizedValue = BigInt(auth.value);
+      if (authorizedValue < requiredMicro) throw new Error('Insufficient amount');
+      if (getAddress(auth.to) !== normalizedPayTo) throw new Error('Wrong recipient');
+      if (typeof auth.nonce !== 'string' || !/^0x[0-9a-fA-F]{64}$/.test(auth.nonce)) throw new Error('Invalid nonce');
+      if (activeNonces.has(auth.nonce)) throw new Error('Authorization replayed');
 
       const recovered = await recoverTypedDataAddress({
-        domain: { name: 'USDC', version: '2', chainId: 8453, verifyingContract: getAddress(asset) },
+        domain: { name: 'USDC', version: '2', chainId: 8453, verifyingContract: normalizedAsset },
         types: TRANSFER_AUTH_TYPES,
         primaryType: 'TransferWithAuthorization',
         message: {
           from: getAddress(auth.from),
           to: getAddress(auth.to),
-          value: BigInt(auth.value),
+          value: authorizedValue,
           validAfter: BigInt(auth.validAfter),
           validBefore: BigInt(auth.validBefore),
           nonce: auth.nonce,
@@ -126,29 +145,35 @@ function clawpay(opts) {
         throw new Error('Signature mismatch');
       }
 
-      // Payment verified
+      // Payment verified. Reserve the nonce before the protected handler runs so
+      // concurrent retries cannot execute the resource twice in this process.
+      // Failed resource responses release the reservation; successful responses
+      // keep it consumed while ClawPay settlement/analytics is reported.
+      activeNonces.add(auth.nonce);
+      const amountUsdc = Number(authorizedValue) / 1e6;
       req.clawpay = {
         verified: true,
         payer: auth.from,
-        amountUsdc: parseInt(auth.value) / 1e6,
-        protocolFee: (parseInt(auth.value) / 1e6) * (CLAWPAY_PROTOCOL_FEE_BPS / 10000),
+        amountUsdc,
+        protocolFee: amountUsdc * (CLAWPAY_PROTOCOL_FEE_BPS / 10000),
       };
 
-      next();
-
-      // Fire-and-forget: report to ClawPay for settlement + analytics
       res.on('finish', () => {
-        if (res.statusCode < 400) {
-          reportToClawPay({
-            paymentPayload,
-            payTo,
-            price,
-            endpoint: req.originalUrl,
-            payer: auth.from,
-            network,
-          }).catch(() => {});
+        if (res.statusCode >= 400) {
+          activeNonces.delete(auth.nonce);
+          return;
         }
+        reportToClawPay({
+          paymentPayload,
+          payTo: normalizedPayTo,
+          price: parsedPrice.toString(),
+          endpoint: req.originalUrl,
+          payer: auth.from,
+          network,
+        }).catch(() => {});
       });
+
+      next();
 
     } catch (e) {
       return res.status(402).json({ error: 'Payment verification failed', detail: e.message });
