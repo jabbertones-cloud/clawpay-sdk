@@ -86,7 +86,14 @@ function clawpayFetch(privateKey, opts = {}) {
       throw new Error('ClawPay: 402 response has no payment options');
     }
 
-    const amount = parseInt(accepts[0].maxAmountRequired || '0') / 1e6;
+    const rawAmount = accepts[0].maxAmountRequired;
+    if (typeof rawAmount !== 'string' || !/^[0-9]+$/.test(rawAmount)) {
+      throw new Error('ClawPay: Invalid payment amount in 402 response');
+    }
+    const amount = Number(rawAmount) / 1e6;
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error('ClawPay: Invalid payment amount in 402 response');
+    }
 
     // Safety checks
     if (amount > maxPerCall) {
@@ -104,7 +111,7 @@ function clawpayFetch(privateKey, opts = {}) {
     const payFetch = await getPayFetch();
     const payRes = await payFetch(url, init);
 
-    if (payRes.status === 200 || payRes.status === 201) {
+    if (payRes.status >= 200 && payRes.status < 300) {
       hourlySpend += amount;
     }
 
