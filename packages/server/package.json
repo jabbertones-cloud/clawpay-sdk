@@ -8,7 +8,7 @@
   "license": "MIT",
   "homepage": "https://autopayagent.com",
   "scripts": {
-    "test": "echo 'Tests pass'"
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "viem": "^2.0.0"
